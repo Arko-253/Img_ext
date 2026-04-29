@@ -32,13 +32,20 @@ sys.stderr.flush()
 
 # ---------------- FACE EXTRACTION ----------------
 def extract_faces(image_path):
-    img = cv2.imread(image_path)
+    img_array = np.fromfile(image_path, dtype=np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    
     if img is None:
+        sys.stderr.write(f"Could not read: {image_path}\n")
+        sys.stderr.flush()
         return []
+    
     img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     faces = mtcnn(img_rgb)
+    
     if faces is None:
         return []
+    
     return faces
 
 
@@ -76,6 +83,22 @@ def build_temp_database(folder_path):
 
 # ---------------- SEARCH ----------------
 def search(query_img, dataset_path, top_k=20, threshold=0.6):
+    sys.stderr.write(f"Reading query image: {query_img}\n")
+    sys.stderr.flush()
+    
+    # cv2.imread fails on files without extensions — force read as image
+    img_array = np.fromfile(query_img, dtype=np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    
+    sys.stderr.write(f"Query image shape: {img.shape if img is not None else 'NONE - failed to read'}\n")
+    sys.stderr.flush()
+    
+    if img is None:
+        sys.stderr.write("ERROR: Could not read query image\n")
+        sys.stderr.flush()
+        print(json.dumps([]))
+        sys.exit(0)
+    
     index, image_paths = build_temp_database(dataset_path)
 
     if index is None:
