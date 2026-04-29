@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/* MOBILE & RESPONSIVE BASE STYLES */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  overflow-x: hidden;
+  background-color: #120807;
+}
+
+/* TEXTURE OVERLAYS */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url('/textures/grain.png');
+  background-size: cover;
+  opacity: 1;
+  pointer-events: none;
+  z-index: 100;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url('/textures/paper.png');
+  background-size: cover;
+  opacity: 0.8;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* CARD ROTATIONS - Intentional Imperfection */
+.card:nth-child(1) {
+  transform: rotate(-0.6deg);
+}
+
+.card:nth-child(2) {
+  transform: rotate(0.4deg);
+}
+
+/* MOBILE OPTIMIZATIONS */
+@media (max-width: 768px) {
+  input[type="file"] {
+    font-size: 16px;
+  }
+  
+  button {
+    font-size: 16px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* TOUCH-FRIENDLY HOVER STATES */
+@media (hover: hover) {
+  button:hover {
+    transform: scale(1.1);
+  }
+}
+
+@media (hover: none) {
+  button:active {
+    transform: scale(0.95);
+  }
+}
