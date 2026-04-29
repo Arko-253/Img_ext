@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const AdmZip = require("adm-zip");
 const fs = require("fs");
 const path = require("path");
@@ -11,20 +11,17 @@ const { v4: uuidv4 } = require("uuid");
 
 const app = express();
 
-// Environment variables
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-// CORS configuration - production safe
-const allowedOrigins = process.env.CORS_ORIGINS 
-  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
-  : NODE_ENV === 'production' 
-    ? [] // Deny all in production if not specified
-    : ['http://localhost:5173', 'http://localhost:3000']; // Dev defaults
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
+  : NODE_ENV === 'production'
+    ? []
+    : ['http://localhost:5173', 'http://localhost:3000'];
 
-const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '104857600'); // 100MB default
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '104857600');
 
-// CORS middleware
 app.use(cors({
   origin: allowedOrigins.length > 0 ? allowedOrigins : true,
   credentials: true,
@@ -33,19 +30,20 @@ app.use(cors({
 
 console.log(`[${NODE_ENV}] Server starting on port ${PORT}`);
 
-const upload = multer({ 
+// Ensure required directories exist on startup
+['uploads', 'results'].forEach(dir => {
+  const dirPath = path.join(__dirname, dir);
+  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+});
+
+const upload = multer({
   dest: "uploads/",
   limits: { fileSize: MAX_FILE_SIZE }
 });
 
-// API Configuration endpoint - returns runtime API URL for frontend
 app.get('/api/config', (req, res) => {
-  const protocol = req.protocol || 'http';
-  const host = req.get('host') || `localhost:${PORT}`;
-  const apiUrl = `${protocol}://${host}`;
-  
   res.json({
-    apiUrl,
+    apiUrl: `${req.protocol}://${req.get('host')}`,
     environment: NODE_ENV
   });
 });
@@ -57,28 +55,41 @@ app.post(
     { name: "dataset", maxCount: 1 },
   ]),
   async (req, res) => {
-    try {
-      const sessionId = uuidv4();
+    const sessionId = uuidv4();
+    const extractPath = path.join(__dirname, "uploads", sessionId);
+    const resultPath = path.join(__dirname, "results", `${sessionId}.zip`);
 
+    // Cleanup helper — call after response or on error
+    const cleanup = () => {
+      try {
+        if (fs.existsSync(extractPath))
+          fs.rmSync(extractPath, { recursive: true, force: true });
+        if (fs.existsSync(resultPath))
+          fs.unlinkSync(resultPath);
+        if (req.files?.query?.[0]?.path)
+          fs.unlinkSync(req.files.query[0].path);
+        if (req.files?.dataset?.[0]?.path)
+          fs.unlinkSync(req.files.dataset[0].path);
+      } catch (e) {
+        console.error("Cleanup error:", e);
+      }
+    };
+
+    try {
       const queryPath = req.files["query"][0].path;
       const zipPath = req.files["dataset"][0].path;
 
-      const extractPath = path.join(__dirname, "uploads", sessionId);
       fs.mkdirSync(extractPath, { recursive: true });
 
-      // 🔥 unzip dataset
       const zip = new AdmZip(zipPath);
       zip.extractAllTo(extractPath, true);
 
-      // 🔍 FIX: handle nested folder inside zip
       let datasetPath = extractPath;
-
       const files = fs.readdirSync(extractPath);
       console.log("Extracted files:", files);
 
       if (files.length === 1) {
         const possibleFolder = path.join(extractPath, files[0]);
-
         if (fs.lstatSync(possibleFolder).isDirectory()) {
           datasetPath = possibleFolder;
         }
@@ -86,54 +97,49 @@ app.post(
 
       console.log("Using dataset path:", datasetPath);
 
-      // 🔥 Python paths (SAFE) - use system python3
-      const pythonPath = "python3";
       const scriptPath = path.join(__dirname, "../ai/ai_engine.py");
 
-      // 🔥 run AI
-      exec(
-        `${pythonPath} "${scriptPath}" "${queryPath}" "${datasetPath}"`,
-        (error, stdout, stderr) => {
-          if (error) {
-            console.error("Exec error:", error);
-            console.error("Stderr:", stderr);
-            return res.status(500).send("AI error");
-          }
+      // Use python3.10 explicitly — matches the version pip3.10 installed packages into
+      const pyProcess = spawn("python3.10", [scriptPath, queryPath, datasetPath]);
 
-          console.log("AI Output:", stdout);
+      let stdout = "";
+      let stderr = "";
 
-          let matches;
-          try {
-            matches = JSON.parse(stdout);
-          } catch (err) {
-            console.error("JSON Parse error:", stdout);
-            return res.status(500).send("Parse error");
-          }
+      pyProcess.stdout.on("data", (data) => { stdout += data.toString(); });
+      pyProcess.stderr.on("data", (data) => { stderr += data.toString(); });
 
-          // 🔥 zip matched images
-          const resultZip = new AdmZip();
-
-          matches.forEach((file) => {
-            if (fs.existsSync(file)) {
-              resultZip.addLocalFile(file);
-            }
-          });
-
-          const resultPath = path.join(
-            __dirname,
-            "results",
-            `${sessionId}.zip`
-          );
-
-          resultZip.writeZip(resultPath);
-
-          console.log("Returning zip:", resultPath);
-
-          res.download(resultPath);
+      pyProcess.on("close", (code) => {
+        if (code !== 0) {
+          console.error("Python error (code", code, "):", stderr);
+          cleanup();
+          return res.status(500).send("AI error");
         }
-      );
+
+        console.log("AI Output:", stdout);
+
+        let matches;
+        try {
+          matches = JSON.parse(stdout);
+        } catch (err) {
+          console.error("JSON Parse error:", stdout);
+          cleanup();
+          return res.status(500).send("Parse error");
+        }
+
+        const resultZip = new AdmZip();
+        matches.forEach((file) => {
+          if (fs.existsSync(file)) resultZip.addLocalFile(file);
+        });
+
+        resultZip.writeZip(resultPath);
+        console.log("Returning zip:", resultPath);
+
+        res.download(resultPath, () => cleanup());
+      });
+
     } catch (err) {
       console.error("Server error:", err);
+      cleanup();
       res.status(500).send("Server error");
     }
   }
