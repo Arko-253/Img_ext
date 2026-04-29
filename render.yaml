@@ -5,10 +5,11 @@ services:
     plan: free
     rootDir: server
     buildCommand: >-
-      pip3.10 install --upgrade pip &&
-      pip3.10 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu &&
-      pip3.10 install opencv-python-headless &&
-      pip3.10 install -r ../ai/requirements.txt &&
+      python3 --version &&
+      python3 -m pip install --upgrade pip &&
+      python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu &&
+      python3 -m pip install opencv-python-headless &&
+      python3 -m pip install -r ../ai/requirements.txt &&
       npm install
     startCommand: node server.js
     envVars:
