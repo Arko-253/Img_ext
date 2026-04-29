@@ -1,7 +1,6 @@
 torch==2.1.2
 torchvision==0.16.2
 facenet-pytorch
-opencv-python
+opencv-python-headless==4.9.0.80
 numpy
 faiss-cpu
-Pillow>=10.0.0

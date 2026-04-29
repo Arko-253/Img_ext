@@ -7,6 +7,7 @@ services:
 
     buildCommand: |
       python3 -m pip install --upgrade pip
+      python3 -m pip install opencv-python-headless
       python3 -m pip install -r ../ai/requirements.txt
       npm install
 
