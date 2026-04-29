@@ -8,6 +8,9 @@ RUN pip install --upgrade pip && \
     pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu && \
     pip install -r ./ai/requirements.txt
 
+# Download and cache FaceNet model
+RUN python3 -c "from facenet_pytorch import InceptionResnetV1; InceptionResnetV1(pretrained='vggface2').eval()"
+
 # Install Node dependencies
 COPY server/package*.json ./server/
 RUN cd server && npm install
