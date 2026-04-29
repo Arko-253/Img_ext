@@ -23,10 +23,11 @@ const handleSearch = async () => {
   try {
     loading.value = true;
 
-    // Use runtime-configured API URL (set in index.html) or fallback to build-time env
-    const apiUrl = window.VITE_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // Use build-time environment variable (injected by Vite)
+    const API = import.meta.env.VITE_API_URL || 'https://picfin-backend.onrender.com';
+    
     const res = await axios.post(
-      `${apiUrl}/search`,
+      `${API}/search`,
       formData,
       { responseType: "blob" }
     );
