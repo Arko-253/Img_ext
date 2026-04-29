@@ -24,7 +24,7 @@ const handleSearch = async () => {
     loading.value = true;
 
     // Use build-time environment variable (injected by Vite)
-    const API = import.meta.env.VITE_API_URL || 'https://picfin-backend.onrender.com';
+    const API = import.meta.env.VITE_API_URL || 'https://picfin-backend-bnhabddug7hhdhhq.southeastasia-01.azurewebsites.net';
     
     const res = await axios.post(
       `${API}/search`,

@@ -1,0 +1,22 @@
+# Python
+ai/.venv
+ai/__pycache__
+ai/*.pyc
+ai/dataset
+ai/dataset.zip
+ai/*.jpg
+ai/*.png
+
+# Node
+server/node_modules
+server/uploads
+server/results
+
+# Git
+.git
+.gitignore
+
+# Misc
+*.md
+ui/node_modules
+ui/dist
