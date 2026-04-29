@@ -1,5 +1,6 @@
 import os
 import sys
+import signal
 
 # Print immediately so we know the script started
 print("AI engine started", flush=True)
@@ -30,23 +31,42 @@ sys.stderr.write("Models loaded\n")
 sys.stderr.flush()
 
 
+# ---------------- TIMEOUT HANDLER ----------------
+def timeout_handler(signum, frame):
+    raise TimeoutError("Image processing timed out")
+
+
 # ---------------- FACE EXTRACTION ----------------
 def extract_faces(image_path):
-    img_array = np.fromfile(image_path, dtype=np.uint8)
-    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-    
-    if img is None:
-        sys.stderr.write(f"Could not read: {image_path}\n")
+    signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(10)  # 10 second timeout per image
+    try:
+        img_array = np.fromfile(image_path, dtype=np.uint8)
+        img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            signal.alarm(0)
+            return []
+        
+        # Resize large images to speed up MTCNN
+        h, w = img.shape[:2]
+        if max(h, w) > 1024:
+            scale = 1024 / max(h, w)
+            img = cv2.resize(img, (int(w*scale), int(h*scale)))
+        
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        faces = mtcnn(img_rgb)
+        signal.alarm(0)  # cancel timeout
+        
+        if faces is None:
+            return []
+        
+        return faces
+    except TimeoutError:
+        sys.stderr.write(f"TIMEOUT skipping: {image_path}\n")
         sys.stderr.flush()
+        signal.alarm(0)
         return []
-    
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    faces = mtcnn(img_rgb)
-    
-    if faces is None:
-        return []
-    
-    return faces
 
 
 # ---------------- EMBEDDING ----------------
