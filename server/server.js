@@ -76,7 +76,7 @@ app.post(
     };
 
     try {
-      const queryPath = req.files["query"][0].path;
+      const queryPath = path.resolve(req.files["query"][0].path);
       const zipPath = req.files["dataset"][0].path;
 
       fs.mkdirSync(extractPath, { recursive: true });
