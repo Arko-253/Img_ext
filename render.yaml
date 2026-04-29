@@ -2,7 +2,6 @@ services:
   - type: web
     name: picfin-backend
     env: node
-    nodeVersion: 18.17.0
     plan: free
     rootDir: ./server
 
