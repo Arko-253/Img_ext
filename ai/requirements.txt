@@ -1,6 +1,6 @@
-torch==2.1.2
-torchvision==0.16.2
+torch==2.9.0
+torchvision==0.24.0
 facenet-pytorch
-opencv-python-headless==4.9.0.80
+opencv-python-headless
 numpy
 faiss-cpu
