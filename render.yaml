@@ -6,10 +6,16 @@ services:
     rootDir: server
 
     buildCommand: |
-      python3 -m pip install --upgrade pip
-      python3 -m pip install opencv-python-headless
-      python3 -m pip install -r ../ai/requirements.txt
-      npm install
+       curl -sSL https://install.python-poetry.org | python3 -
+       export PATH="/opt/render/project/poetry/bin:$PATH"
+
+        pyenv install 3.10.13
+        pyenv global 3.10.13
+
+        python3 -m pip install --upgrade pip
+        python3 -m pip install -r ../ai/requirements.txt
+
+        npm install
 
     startCommand: node server.js
 
