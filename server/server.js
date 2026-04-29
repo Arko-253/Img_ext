@@ -100,7 +100,7 @@ app.post(
       const scriptPath = path.join(__dirname, "../ai/ai_engine.py");
 
       // Use python3.10 explicitly — matches the version pip3.10 installed packages into
-      const pyProcess = spawn("python3.10", [scriptPath, queryPath, datasetPath]);
+      const pyProcess = spawn("python3", [scriptPath, queryPath, datasetPath]);
 
       let stdout = "";
       let stderr = "";

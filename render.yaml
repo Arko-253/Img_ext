@@ -1,17 +1,10 @@
 services:
   - type: web
     name: picfin-backend
-    env: node
+    env: docker
     plan: free
-    rootDir: server
-    buildCommand: >-
-      python3 --version &&
-      python3 -m pip install --upgrade pip &&
-      python3 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu &&
-      python3 -m pip install opencv-python-headless &&
-      python3 -m pip install -r ../ai/requirements.txt &&
-      npm install
-    startCommand: node server.js
+    dockerfilePath: server/Dockerfile
+    dockerContext: .
     envVars:
       - key: PORT
         value: 10000
