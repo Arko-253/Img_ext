@@ -61,14 +61,27 @@ def get_embedding(face_tensor):
 def build_temp_database(folder_path):
     embeddings = []
     image_paths = []
+    
+    all_files = os.listdir(folder_path)
+    sys.stderr.write(f"Dataset files count: {len(all_files)}\n")
+    sys.stderr.flush()
 
-    for img_name in os.listdir(folder_path):
+    for i, img_name in enumerate(all_files):
         path = os.path.join(folder_path, img_name)
+        sys.stderr.write(f"Processing {i+1}/{len(all_files)}: {img_name}\n")
+        sys.stderr.flush()
+        
         faces = extract_faces(path)
+        sys.stderr.write(f"  Faces found: {len(faces)}\n")
+        sys.stderr.flush()
+        
         for face in faces:
             emb = get_embedding(face)
             embeddings.append(emb)
             image_paths.append(path)
+
+    sys.stderr.write(f"Total embeddings: {len(embeddings)}\n")
+    sys.stderr.flush()
 
     if len(embeddings) == 0:
         return None, None
