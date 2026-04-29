@@ -145,19 +145,48 @@ npm run dev
 
 ## 🔐 Security & Environment Variables
 
-Create a `.env` file in the root directory:
+### Setup Environment Files
 
+1. **Copy `.env.example` to `.env`:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Frontend Environment** (`ui/.env`):
+   ```env
+   # API endpoint
+   VITE_API_URL=http://localhost:5000
+   VITE_ENV=development
+   ```
+
+3. **Root Environment** (`.env`):
+   ```env
+   # Server Configuration
+   PORT=5000
+   NODE_ENV=development
+   MAX_FILE_SIZE=104857600
+   UPLOAD_TIMEOUT=300000
+
+   # Frontend Configuration
+   VITE_API_URL=http://localhost:5000
+   VITE_ENV=development
+
+   # CORS & Security
+   CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+   ```
+
+### Production Configuration
+
+For production, update `VITE_API_URL` to your deployed backend:
 ```env
-# Server
-PORT=5000
-NODE_ENV=development
+# Development
+VITE_API_URL=http://localhost:5000
 
-# AI
-DEVICE=cuda  # or 'cpu' for CPU-only mode
-BATCH_SIZE=32
+# Production
+VITE_API_URL=https://api.yourdomain.com
 ```
 
-**Important:** Never commit `.env` files. They're in `.gitignore` by default.
+**Important:** Never commit `.env` files to Git. They're in `.gitignore` by default.
 
 ---
 

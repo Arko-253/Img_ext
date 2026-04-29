@@ -163,28 +163,52 @@ unzip results.zip
 
 ## 🔧 Configuration
 
-### Server Configuration (server/.env)
+### Environment Variables Setup
 
+1. **Copy environment templates:**
+   ```bash
+   cp .env.example .env
+   cp ui/.env.example ui/.env  # or use the provided ui/.env
+   ```
+
+2. **Root Configuration (.env):**
+   ```env
+   # Server
+   PORT=5000
+   NODE_ENV=development
+   MAX_FILE_SIZE=104857600
+   UPLOAD_TIMEOUT=300000
+   
+   # Frontend API
+   VITE_API_URL=http://localhost:5000
+   VITE_ENV=development
+   ```
+
+3. **Frontend Configuration (ui/.env):**
+   ```env
+   VITE_API_URL=http://localhost:5000
+   VITE_ENV=development
+   ```
+
+### Changing API Endpoint
+
+To change the API endpoint (e.g., for production):
+
+**Development:**
 ```env
-PORT=5000
-NODE_ENV=development
-MAX_FILE_SIZE=104857600
+VITE_API_URL=http://localhost:5000
 ```
 
-### Frontend Configuration (ui/src/App.vue)
-
-Change API endpoint:
-```javascript
-const res = await axios.post(
-  "http://localhost:5000/search",  // ← Change this
-  formData,
-  { responseType: "blob" }
-);
+**Production:**
+```env
+VITE_API_URL=https://api.yourdomain.com
 ```
 
-### AI Configuration (ai/ai_engine.py)
+The frontend will automatically use this URL from `import.meta.env.VITE_API_URL`.
 
-GPU/CPU mode:
+### AI Engine Configuration
+
+GPU/CPU mode detection (automatic):
 ```python
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
