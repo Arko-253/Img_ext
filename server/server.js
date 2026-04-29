@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require("express");
 const multer = require("multer");
 const cors = require("cors");
@@ -8,9 +10,35 @@ const path = require("path");
 const { v4: uuidv4 } = require("uuid");
 
 const app = express();
-app.use(cors());
 
-const upload = multer({ dest: "uploads/" });
+// Environment variables
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:3000'];
+const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '104857600'); // 100MB default
+
+// CORS configuration
+app.use(cors({
+  origin: CORS_ORIGINS,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  credentials: true
+}));
+
+console.log(`[${NODE_ENV}] Server starting on port ${PORT}`);
+console.log(`[${NODE_ENV}] CORS origins: ${CORS_ORIGINS.join(', ')}`);
+
+const upload = multer({ 
+  dest: "uploads/",
+  limits: { fileSize: MAX_FILE_SIZE }
+});
+
+// API Configuration endpoint - returns runtime API URL for frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    apiUrl: `http://localhost:${PORT}`,
+    environment: NODE_ENV
+  });
+});
 
 app.post(
   "/search",
@@ -104,4 +132,7 @@ app.post(
   }
 );
 
-app.listen(5000, () => console.log("Server running on port 5000"));
+app.listen(PORT, () => {
+  console.log(`✓ Server running on http://localhost:${PORT}`);
+  console.log(`✓ Environment: ${NODE_ENV}`);
+});

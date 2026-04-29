@@ -23,7 +23,8 @@ const handleSearch = async () => {
   try {
     loading.value = true;
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // Use runtime-configured API URL (set in index.html) or fallback to build-time env
+    const apiUrl = window.VITE_API_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const res = await axios.post(
       `${apiUrl}/search`,
       formData,

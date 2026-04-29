@@ -11,6 +11,26 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // Runtime configuration - detect API URL
+      (async function() {
+        try {
+          // Try to get config from the server's /api/config endpoint
+          const response = await fetch('/api/config', { method: 'GET' });
+          if (response.ok) {
+            const config = await response.json();
+            window.VITE_API_URL = config.apiUrl || 'http://localhost:5000';
+          } else {
+            // Fallback to build-time env variable
+            window.VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+          }
+        } catch (err) {
+          // Fallback: use build-time env or localhost
+          window.VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+        }
+        console.log('API URL set to:', window.VITE_API_URL);
+      })();
+    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
