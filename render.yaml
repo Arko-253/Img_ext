@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: picfin-backend
+    env: node
+    nodeVersion: 18.17.0
+    plan: free
+    rootDir: ./server
+
+    buildCommand: |
+      apt-get update && apt-get install -y python3 python3-pip
+      pip3 install -r ../ai/requirements.txt
+      npm install --production
+
+    startCommand: node server.js
+
+    envVars:
+      - key: PORT
+        sync: false
+      - key: NODE_ENV
+        value: production
+      - key: CORS_ORIGINS
+        sync: false
+      - key: MAX_FILE_SIZE
+        value: 104857600
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=512

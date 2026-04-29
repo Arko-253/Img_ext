@@ -14,18 +14,24 @@ const app = express();
 // Environment variables
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
-const CORS_ORIGINS = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:3000'];
+
+// CORS configuration - production safe
+const allowedOrigins = process.env.CORS_ORIGINS 
+  ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+  : NODE_ENV === 'production' 
+    ? [] // Deny all in production if not specified
+    : ['http://localhost:5173', 'http://localhost:3000']; // Dev defaults
+
 const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '104857600'); // 100MB default
 
-// CORS configuration
+// CORS middleware
 app.use(cors({
-  origin: CORS_ORIGINS,
-  methods: ['GET', 'POST', 'OPTIONS'],
-  credentials: true
+  origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS']
 }));
 
 console.log(`[${NODE_ENV}] Server starting on port ${PORT}`);
-console.log(`[${NODE_ENV}] CORS origins: ${CORS_ORIGINS.join(', ')}`);
 
 const upload = multer({ 
   dest: "uploads/",
@@ -34,8 +40,12 @@ const upload = multer({
 
 // API Configuration endpoint - returns runtime API URL for frontend
 app.get('/api/config', (req, res) => {
+  const protocol = req.protocol || 'http';
+  const host = req.get('host') || `localhost:${PORT}`;
+  const apiUrl = `${protocol}://${host}`;
+  
   res.json({
-    apiUrl: `http://localhost:${PORT}`,
+    apiUrl,
     environment: NODE_ENV
   });
 });
@@ -76,16 +86,13 @@ app.post(
 
       console.log("Using dataset path:", datasetPath);
 
-      // 🔥 Python paths (SAFE)
-      const pythonPath = path.join(
-        __dirname,
-        "../ai/.venv/Scripts/python.exe"
-      );
+      // 🔥 Python paths (SAFE) - use system python3
+      const pythonPath = "python3";
       const scriptPath = path.join(__dirname, "../ai/ai_engine.py");
 
       // 🔥 run AI
       exec(
-        `"${pythonPath}" "${scriptPath}" "${queryPath}" "${datasetPath}"`,
+        `${pythonPath} "${scriptPath}" "${queryPath}" "${datasetPath}"`,
         (error, stdout, stderr) => {
           if (error) {
             console.error("Exec error:", error);
