@@ -98,6 +98,8 @@ app.post(
       console.log("Using dataset path:", datasetPath);
 
       const scriptPath = path.join(__dirname, "../ai/ai_engine.py");
+      console.log("Spawning python3 with script:", scriptPath);
+      console.log("Script exists:", fs.existsSync(scriptPath));
 
       // Use python3.10 explicitly — matches the version pip3.10 installed packages into
       const pyProcess = spawn("python3", [scriptPath, queryPath, datasetPath]);
@@ -106,7 +108,10 @@ app.post(
       let stderr = "";
 
       pyProcess.stdout.on("data", (data) => { stdout += data.toString(); });
-      pyProcess.stderr.on("data", (data) => { stderr += data.toString(); });
+      pyProcess.stderr.on("data", (data) => { 
+        stderr += data.toString(); 
+        console.error("PYTHON STDERR:", data.toString()); // add this line
+      });
 
       pyProcess.on("close", (code) => {
         if (code !== 0) {

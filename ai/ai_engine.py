@@ -9,6 +9,8 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 
 # ---------------- DEVICE ----------------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+import sys
+print("Python:", sys.version, flush=True)
 
 # ---------------- MODELS ----------------
 mtcnn = MTCNN(keep_all=True, device=device)
